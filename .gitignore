@@ -20,3 +20,6 @@ node_modules
 # cloning the hyperlane bridge repo instead of bridge door
 
 hyperlane-monorepo/
+hyperlane_db_relayer/
+hyperlane_db_validator_sepolia/
+hyperlane_db_validator_xrpledger/
