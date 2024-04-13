@@ -65,20 +65,36 @@ cd hyperlane-monorepo/rust
 
 export CONFIG_FILES=../../$ART_FOLDER/$ARG_FILE
 
+export VALIDATOR_SIGNATURES_DIR_SEPOLIA=.../../validator_signatures_sepolia
+export VALIDATOR_SIGNATURES_DIR_XRPLEDGER=.../../validator_signatures_xrpledger
+
+export DB_VALIDATOR_SEPOLIA=../../hyperlane_db_validator_sepolia
+export DB_VALIDATOR_XRPLEDGER=../../hyperlane_db_validator_xrpledger
+
+export DB_RELAYER=../../hyperlane_db_relayer
+
 echo $CONFIG_FILES
 
 ls -l $CONFIG_FILES
 
-# Start the first process (validator) in the background
+#Start the second process (validator) in the background for first chain
 cargo run --release --bin validator -- \
-    --db $DB_VALIDATOR \
-    --originChainName xrpledger \
+    --db $DB_VALIDATOR_SEPOLIA \
+    --originChainName sepolia \
     --checkpointSyncer.type localStorage \
-    --checkpointSyncer.path $VALIDATOR_SIGNATURES_DIR \
+    --checkpointSyncer.path $VALIDATOR_SIGNATURES_DIR_SEPOLIA \
     --validator.key $HYP_KEY &
 pid1=$!
 
-# # Start the second process (relayer) in the background
+# Start the second process (validator) in the background for second chain
+cargo run --release --bin validator -- \
+    --db $DB_VALIDATOR_XRPLEDGER \
+    --originChainName xrpledger \
+    --checkpointSyncer.type localStorage \
+    --checkpointSyncer.path $VALIDATOR_SIGNATURES_DIR_XRPLEDGER \
+    --validator.key $HYP_KEY &
+
+# Start the second process (relayer) in the background
 cargo run --release --bin relayer -- \
     --db $DB_RELAYER \
     --relayChains xrpledger,sepolia \
