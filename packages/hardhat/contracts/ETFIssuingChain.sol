@@ -105,6 +105,8 @@ contract ETFIssuingChain {
 			"Vault is not open or empty"
 		);
 
+		require(_chainId == chainId, "ChainId does not match the contract chainId")
+
 		if (vaults[_vaultId].state == VaultState.EMPTY) {
 			for (uint256 i = 0; i < requiredTokens.length; i++) {
 				vaults[_vaultId]._tokens.push(TokenQuantity(
@@ -224,6 +226,7 @@ contract ETFIssuingChain {
 				vaults[_vaultId]._tokens[j]._quantity
 			);
 		}
+		vaults[_vaultId].state = VaultState.BURNED;
 	}
 
 	function addressToBytes32(address _addr) internal pure returns (bytes32) {
