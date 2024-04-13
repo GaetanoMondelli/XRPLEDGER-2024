@@ -4,9 +4,8 @@ import { ETFIssuingChain, SimpleERC20 } from "../typechain-types";
 import { BigNumber } from "@ethersproject/bignumber";
 
 describe("Hyperlane Bridge", function () {
-  // We define a fixture to reuse the same setup in every test.
   let owner: any;
-  let etf: ETFLock;
+  let etf: ETFIssuingChain;
   let etfToken: SimpleERC20;
   let tokenA: SimpleERC20;
   let tokenB: SimpleERC20;
@@ -20,7 +19,7 @@ describe("Hyperlane Bridge", function () {
     const etfLockFactory = await ethers.getContractFactory("ETFLock");
     const simpleFactory = await ethers.getContractFactory("SimpleERC20");
 
-    etfToken = (await simpleFactory.deploy("ETF Token", "ETF",0)) as SimpleERC20;
+    etfToken = (await simpleFactory.deploy("ETF Token", "ETF", 0)) as SimpleERC20;
     tokenA = (await simpleFactory.deploy("TokenA", "TKA", 18)) as SimpleERC20;
     tokenB = (await simpleFactory.deploy("TokenB", "TKB", 18)) as SimpleERC20;
     await tokenA.mint(owner.address, BigNumber.from(1000).mul(decimalFactor).toString());
@@ -62,6 +61,8 @@ describe("Hyperlane Bridge", function () {
     expect(await tokenA.balanceOf(await etf.getAddress())).to.be.equal(0);
     await etf.deposit(depositInfo);
     // deposited!
-    expect(await tokenA.balanceOf(await etf.getAddress())).to.be.equal(BigNumber.from(10).mul(decimalFactor).toString());
+    expect(await tokenA.balanceOf(await etf.getAddress())).to.be.equal(
+      BigNumber.from(10).mul(decimalFactor).toString(),
+    );
   });
 });
