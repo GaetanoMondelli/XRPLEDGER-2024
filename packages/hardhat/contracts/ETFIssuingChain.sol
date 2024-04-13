@@ -75,10 +75,26 @@ contract ETFIssuingChain {
 		}
 	}
 
+	function getVaultStates() public view returns (VaultState[] memory) {
+		VaultState[] memory states = new VaultState[](90);
+		for (uint256 i = 0; i < states.length; i++) {
+			states[i] = vaults[i].state;
+		}
+		return states;
+	}
+
+	function getVault(uint256 _vaultId) public view returns (Vault memory) {
+		return vaults[_vaultId];
+	}
+
+	function getRequiredTokens() public view returns (TokenQuantity[] memory) {
+		return requiredTokens;
+	}
+
 	function _deposit(
 		DepositInfo memory _depositInfo,
 		uint32 _chainId
-	) public {
+	) internal {
 		uint256 _vaultId = _depositInfo.vaultId;
 		TokenQuantity[] memory _tokens = _depositInfo.tokens;
 		require(
@@ -145,6 +161,30 @@ contract ETFIssuingChain {
 			}
 		}
 		vaults[_vaultId].state = VaultState.MINTED;
+		distributeShares(_vaultId);
+	}
+
+	function distributeShares(uint256 _vaultId) internal {
+		uint256 totalContributions = 0;
+		for (uint256 i = 0; i < contributorsByVault[_vaultId].length; i++) {
+			totalContributions += accountContributionsPerVault[_vaultId][
+				contributorsByVault[_vaultId][i]
+			];
+		}
+
+		for (uint256 i = 0; i < contributorsByVault[_vaultId].length; i++) {
+			uint256 shares = (accountContributionsPerVault[_vaultId][
+				contributorsByVault[_vaultId][i]
+			] * etfTokenPerVault) / totalContributions;
+			ISimpleERC20(etfToken).mint(
+				contributorsByVault[_vaultId][i],
+				shares
+			);
+		}
+	}
+
+	function deposit(DepositInfo memory _depositInfo) public {
+		_deposit(_depositInfo, chainId);
 	}
 
 }
