@@ -1,0 +1,14 @@
+xrpledger:
+  name: xrpledger
+  chainId: 1440002
+  domainId: 1440002
+  protocol: ethereum
+  rpcUrls:
+    - http: https://rpc-evm-sidechain.xrpl.org
+sepolia:
+  name: sepolia
+  chainId: 11155111
+  domainId: 11155111
+  protocol: ethereum
+  rpcUrls:
+    - http: "https://sepolia.drpc.org"
