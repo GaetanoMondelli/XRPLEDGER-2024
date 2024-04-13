@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISimpleERC20 } from "./SimpleERC20.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "hardhat/console.sol";
 
 struct TokenQuantity {
@@ -12,6 +13,7 @@ struct TokenQuantity {
 	uint256 _quantity;
 	uint32 _chainId;
 	address _contributor;
+	address _aggregator;
 }
 
 struct Vault {
@@ -109,7 +111,8 @@ contract ETFIssuingChain {
 					requiredTokens[i]._address,
 					0,
 					_chainId,
-					address(0)
+					address(0),
+					requiredTokens[i]._aggregator
 				));
 			}
 			vaults[_vaultId].state = VaultState.OPEN;
@@ -148,6 +151,11 @@ contract ETFIssuingChain {
 				contributorsByVault[_vaultId].push(msg.sender);
 			}
 
+			// uint256 price = AggregatorV3Interface(_tokens[i]._aggretator).latestRoundData().answer;
+
+			// (, /* uint80 roundID */ int answer, , , ) = AggregatorV3Interface(
+			// 	_tokens[i]._aggregator
+			// ).latestRoundData();
 
 			accountContributionsPerVault[_vaultId][msg.sender] += _tokens[i]
 				._quantity;
