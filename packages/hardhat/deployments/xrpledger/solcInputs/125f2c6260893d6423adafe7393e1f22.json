@@ -1,0 +1,38 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ninterface AggregatorV3Interface {\n  function decimals() external view returns (uint8);\n\n  function description() external view returns (string memory);\n\n  function version() external view returns (uint256);\n\n  function getRoundData(uint80 _roundId)\n    external\n    view\n    returns (\n      uint80 roundId,\n      int256 answer,\n      uint256 startedAt,\n      uint256 updatedAt,\n      uint80 answeredInRound\n    );\n\n  function latestRoundData()\n    external\n    view\n    returns (\n      uint80 roundId,\n      int256 answer,\n      uint256 startedAt,\n      uint256 updatedAt,\n      uint80 answeredInRound\n    );\n}\n"
+    },
+    "contracts/MockAggregator.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\nimport \"@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol\";\n\ncontract MockAggregator is AggregatorV3Interface {\n    int256 private price;\n    uint8 private dec;\n\n    constructor(int256 _price, uint8 _decimals) {\n        price = _price;\n        dec = _decimals;\n    }\n\n    function decimals() public view override returns (uint8) {\n        return dec;\n    }\n\n    function description() external pure override returns (string memory) {\n        return \"Mock Aggregator\";\n    }\n\n    function version() external pure override returns (uint256) {\n        return 0;\n    }\n\n    function getRoundData(\n        uint80 _roundId\n    )\n        external\n        pure\n        override\n        returns (\n            uint80 roundId,\n            int256 answer,\n            uint256 startedAt,\n            uint256 updatedAt,\n            uint80 answeredInRound\n        )\n    {\n        return (_roundId, 0, 0, 0, 0);\n    }\n\n    function latestRoundData()\n        external\n        view\n        override\n        returns (\n            uint80 roundId,\n            int256 answer,\n            uint256 startedAt,\n            uint256 updatedAt,\n            uint80 answeredInRound\n        )\n    {\n        return (0, price, 0, 0, 0);\n    }\n}\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}
