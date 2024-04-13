@@ -2,8 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
+import { IInterchainSecurityModule } from "@hyperlane-xyz/core/contracts/interfaces/IInterchainSecurityModule.sol";
 import { ISimpleERC20 } from "./SimpleERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "hardhat/console.sol";
@@ -45,8 +46,12 @@ contract ETFIssuingChain {
 	TokenQuantity[] public requiredTokens;
 	mapping(address => TokenQuantity) public addressToToken;
 	uint32 public chainId;
-	address public etfToken;
-	uint256 public etfTokenPerVault;
+
+	address public mainChainLock;
+	IMailbox outbox;
+	IInterchainSecurityModule securityModule;
+
+	address public bridge;
 
 	mapping(uint256 => address[]) contributorsByVault;
 	mapping(uint256 => mapping(address => uint256))
@@ -65,15 +70,14 @@ contract ETFIssuingChain {
 	constructor(
 		uint32 _chainId,
 		TokenQuantity[] memory _requiredTokens,
-		address _etfToken,
-		uint256 _etfTokenPerVault
+		address _outbox,
+		address _securityModule
 	) {
 		chainId = _chainId;
-		etfToken = _etfToken;
-		etfTokenPerVault = _etfTokenPerVault;
+		outbox = IMailbox(_outbox);
+		securityModule = IInterchainSecurityModule(_securityModule);
 		for (uint256 i = 0; i < _requiredTokens.length; i++) {
 			requiredTokens.push(_requiredTokens[i]);
-			addressToToken[_requiredTokens[i]._address] = _requiredTokens[i];
 		}
 	}
 
@@ -93,10 +97,6 @@ contract ETFIssuingChain {
 		return requiredTokens;
 	}
 
-	function setVaultState(uint256 _vaultId, VaultState _state) public {
-		vaults[_vaultId].state = _state;
-	}
-
 	function _deposit(
 		DepositInfo memory _depositInfo,
 		uint32 _chainId
@@ -113,13 +113,15 @@ contract ETFIssuingChain {
 
 		if (vaults[_vaultId].state == VaultState.EMPTY) {
 			for (uint256 i = 0; i < requiredTokens.length; i++) {
-				vaults[_vaultId]._tokens.push(TokenQuantity(
-					requiredTokens[i]._address,
-					0,
-					_chainId,
-					address(0),
-					requiredTokens[i]._aggregator
-				));
+				vaults[_vaultId]._tokens.push(
+					TokenQuantity(
+						requiredTokens[i]._address,
+						0,
+						_chainId,
+						address(0),
+						requiredTokens[i]._aggregator
+					)
+				);
 			}
 			vaults[_vaultId].state = VaultState.OPEN;
 		}
@@ -130,8 +132,13 @@ contract ETFIssuingChain {
 					"Token chainId does not match the chainId of the contract"
 				);
 			}
-			console.log("Token address: %s", _tokens[i]._address, i, vaults[_vaultId]._tokens.length);			
-			if (				
+			console.log(
+				"Token address: %s",
+				_tokens[i]._address,
+				i,
+				vaults[_vaultId]._tokens.length
+			);
+			if (
 				_tokens[i]._quantity + vaults[_vaultId]._tokens[i]._quantity >
 				addressToToken[_tokens[i]._address]._quantity
 			) {
@@ -157,12 +164,6 @@ contract ETFIssuingChain {
 				contributorsByVault[_vaultId].push(msg.sender);
 			}
 
-			// uint256 price = AggregatorV3Interface(_tokens[i]._aggretator).latestRoundData().answer;
-
-			// (, /* uint80 roundID */ int answer, , , ) = AggregatorV3Interface(
-			// 	_tokens[i]._aggregator
-			// ).latestRoundData();
-
 			accountContributionsPerVault[_vaultId][msg.sender] += _tokens[i]
 				._quantity;
 		}
@@ -176,30 +177,45 @@ contract ETFIssuingChain {
 			}
 		}
 		vaults[_vaultId].state = VaultState.MINTED;
-		distributeShares(_vaultId);
 	}
 
-	function distributeShares(uint256 _vaultId) internal {
-		uint256 totalContributions = 0;
-		for (uint256 i = 0; i < contributorsByVault[_vaultId].length; i++) {
-			totalContributions += accountContributionsPerVault[_vaultId][
-				contributorsByVault[_vaultId][i]
-			];
-		}
+	function depositAndNotify(DepositInfo calldata _depositInfo) public {
+		_deposit(_depositInfo, chainId);
+		bytes32 mainChainLockBytes32 = addressToBytes32(mainChainLock);
+		uint256 fee = outbox.quoteDispatch(
+			chainId,
+			mainChainLockBytes32,
+			abi.encode(_depositInfo)
+		);
+		outbox.dispatch{ value: fee }(
+			chainId,
+			mainChainLockBytes32,
+			abi.encode(_depositInfo)
+		);
+	}
 
-		for (uint256 i = 0; i < contributorsByVault[_vaultId].length; i++) {
-			uint256 shares = (accountContributionsPerVault[_vaultId][
-				contributorsByVault[_vaultId][i]
-			] * etfTokenPerVault) / totalContributions;
-			ISimpleERC20(etfToken).mint(
-				contributorsByVault[_vaultId][i],
-				shares
+	// modifier that allows only bridge to execute
+	modifier onlyBridge() {
+		require(
+			msg.sender == address(securityModule),
+			"Only bridge can call this function"
+		);
+		_;
+	}
+
+	function _burn(uint256 _vaultId, address burner) internal {
+		require(
+			vaults[_vaultId].state == VaultState.MINTED,
+			"Vault is not minted"
+		);
+
+		for (uint256 j = 0; j < vaults[_vaultId]._tokens.length; j++) {
+			IERC20(vaults[_vaultId]._tokens[j]._address).transfer(
+				burner,
+				vaults[_vaultId]._tokens[j]._quantity
 			);
 		}
-	}
-
-	function deposit(DepositInfo memory _depositInfo) public {
-		_deposit(_depositInfo, chainId);
+		vaults[_vaultId].state = VaultState.BURNED;
 	}
 
 	function handle(
@@ -214,23 +230,8 @@ contract ETFIssuingChain {
 
 		DepositInfo memory _depositInfo = abi.decode(_message, (DepositInfo));
 		uint32 _chainId = _depositInfo.tokens[0]._chainId;
-		_deposit(_depositInfo, _chainId);
-	}
-
-	function burn(uint256 _vaultId) public {
-		require(
-			vaults[_vaultId].state == VaultState.MINTED,
-			"Vault is not minted"
-		);
-		// require to pay back the etfToken
-		ISimpleERC20(etfToken).burn(msg.sender, etfTokenPerVault);
-		for (uint256 j = 0; j < vaults[_vaultId]._tokens.length; j++) {
-			IERC20(vaults[_vaultId]._tokens[j]._address).transfer(
-				msg.sender,
-				vaults[_vaultId]._tokens[j]._quantity
-			);
-		}
-		vaults[_vaultId].state = VaultState.BURNED;
+		address burner = _depositInfo.tokens[0]._contributor;
+		_burn(_depositInfo.vaultId, burner);
 	}
 
 	function addressToBytes32(address _addr) internal pure returns (bytes32) {
