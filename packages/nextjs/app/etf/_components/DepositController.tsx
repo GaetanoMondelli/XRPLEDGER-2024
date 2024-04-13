@@ -1,23 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { BigNumber } from "@ethersproject/bignumber";
-import { useAccount, useContractRead, useContractWrite } from "wagmi";
+import React from "react";
+import { useContractWrite } from "wagmi";
 import { displayTxResult } from "~~/app/debug/_components/contract";
 import { useTransactor } from "~~/hooks/scaffold-eth";
 // import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
-import { getParsedError } from "~~/utils/scaffold-eth";
 import { getAllContracts } from "~~/utils/scaffold-eth/contractsData";
 
 export function DepositController({
-  bundleId,
   quantity,
   setQuantity,
   requiredQuantity,
   tokenAddress,
   chainId,
 }: {
-  bundleId: string;
   quantity: any;
   requiredQuantity: any;
   setQuantity: any;
@@ -28,7 +24,6 @@ export function DepositController({
   const writeTxn = useTransactor();
   // const { chain } = useNetwork();
   // const { targetNetwork } = useTargetNetwork();
-  const { address: connectedAddress } = useAccount();
   const contractName = "ETFIssuingChain";
   const xrpledgerchainId = 1440002;
   const contractSimpleName = "SimpleERC20";
