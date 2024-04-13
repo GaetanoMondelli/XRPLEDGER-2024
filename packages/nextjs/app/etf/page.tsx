@@ -3,8 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { TxReceipt, displayTxResult } from "../debug/_components/contract";
-import { CollateralVaultView } from "./_components/CollateralVault";
-import { Deposit } from "./_components/Deposit";
+import { DepositController } from "./_components/DepositController";
 import { MatrixView } from "./_components/MatrixView";
 import PieToken from "./_components/PieToken";
 import TokenBalanceAllowance from "./_components/tokenBalanceAllowance";
@@ -17,6 +16,10 @@ import { useTransactor } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
 import { getParsedError, notification } from "~~/utils/scaffold-eth";
 import { getAllContracts } from "~~/utils/scaffold-eth/contractsData";
+
+// import { DebugContracts } from "./_components/DebugContracts";
+
+// import { DebugContracts } from "./_components/DebugContracts";
 
 // import { DebugContracts } from "./_components/DebugContracts";
 
@@ -179,7 +182,25 @@ const ETF: NextPage = () => {
         ) : null} */}
         <br></br>
         <br></br>
-        <Deposit bundleId={bundleId} />
+        <h1>Collateral Vault</h1>
+        <p>Bundle ID: {bundleId}</p>
+        <b>Required Tokens</b>
+        <DepositController
+          bundleId={bundleId}
+          quantity={0}
+          setQuantity={0}
+          requiredQuantity={tokens && tokens[0] ? tokens[0]._quantity : 0}
+          tokenAddress={tokens && tokens[0] ? tokens[0]._address : ""}
+          chainId={tokens && tokens[0] ? tokens[0]._chainId : ""}
+        />
+        <DepositController
+          bundleId={bundleId}
+          quantity={0}
+          setQuantity={0}
+          requiredQuantity={tokens && tokens[1] ? tokens[1]._quantity : 0}
+          tokenAddress={tokens && tokens[1] ? tokens[1]._address : ""}
+          chainId={tokens && tokens[1] ? tokens[1]._chainId : ""}
+        />
         <br></br>
         <br></br>
       </div>
