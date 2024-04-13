@@ -16,3 +16,7 @@ node_modules
 .vercel
 
 .env
+
+# cloning the hyperlane bridge repo instead of bridge door
+
+hyperlane-monorepo/
