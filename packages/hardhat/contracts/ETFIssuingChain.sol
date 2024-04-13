@@ -26,6 +26,13 @@ enum VaultState {
 	BURNED
 }
 
+struct EventInfo {
+	address sender;
+	uint256 quantity;
+	uint32 chainId;
+	address contributor;
+}
+
 struct DepositInfo {
 	uint256 vaultId;
 	TokenQuantity[] tokens;
@@ -68,17 +75,44 @@ contract ETFIssuingChain {
 		}
 	}
 
-	function getVault(uint256 _vaultId) public view returns (Vault memory) {
-		return vaults[_vaultId];
-	}
-
-	function deposit(
+	function _deposit(
 		DepositInfo memory _depositInfo,
 		uint32 _chainId
 	) public {
 		uint256 _vaultId = _depositInfo.vaultId;
 		TokenQuantity[] memory _tokens = _depositInfo.tokens;
+		require(
+			vaults[_vaultId].state == VaultState.OPEN ||
+				vaults[_vaultId].state == VaultState.EMPTY,
+			"Vault is not open or empty"
+		);
+
+		if (vaults[_vaultId].state == VaultState.EMPTY) {
+			for (uint256 i = 0; i < requiredTokens.length; i++) {
+				vaults[_vaultId]._tokens.push(TokenQuantity(
+					requiredTokens[i]._address,
+					0,
+					_chainId,
+					address(0)
+				));
+			}
+			vaults[_vaultId].state = VaultState.OPEN;
+		}
+
 		for (uint256 i = 0; i < _tokens.length; i++) {
+			if (_tokens[i]._chainId != _chainId) {
+				revert(
+					"Token chainId does not match the chainId of the contract"
+				);
+			}
+			console.log("Token address: %s", _tokens[i]._address, i, vaults[_vaultId]._tokens.length);			
+			if (				
+				_tokens[i]._quantity + vaults[_vaultId]._tokens[i]._quantity >
+				addressToToken[_tokens[i]._address]._quantity
+			) {
+				revert("Token quantity exceeds the required amount");
+			}
+
 			IERC20(_tokens[i]._address).transferFrom(
 				_tokens[i]._contributor,
 				address(this),
@@ -99,7 +133,7 @@ contract ETFIssuingChain {
 			}
 
 			accountContributionsPerVault[_vaultId][msg.sender] += _tokens[i]
-				._quantity; // need to add xls-47 oracle price
+				._quantity;
 		}
 
 		for (uint256 i = 0; i < requiredTokens.length; i++) {
@@ -112,4 +146,5 @@ contract ETFIssuingChain {
 		}
 		vaults[_vaultId].state = VaultState.MINTED;
 	}
+
 }
