@@ -8,6 +8,7 @@ import type { NextPage } from "next";
 import { useContractRead } from "wagmi";
 import { getParsedError, notification } from "~~/utils/scaffold-eth";
 import { getAllContracts } from "~~/utils/scaffold-eth/contractsData";
+import { Deposit } from "./_components/Deposit";
 
 const ETF: NextPage = () => {
   const contractsData = getAllContracts();
@@ -147,7 +148,7 @@ const ETF: NextPage = () => {
         <br></br>
         <br></br>
         <br></br>
-        {/* <CollateralVaultView bundleId={bundleId} /> */}
+        <Deposit bundleId={bundleId} />
         <br></br>
       </div>
     </>
