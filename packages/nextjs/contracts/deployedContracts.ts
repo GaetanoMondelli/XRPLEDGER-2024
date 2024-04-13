@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   1440002: {
     ETFIssuingChain: {
-      address: "0xbd291e25CB86177C8E35829c805dEBDe64e3eE19",
+      address: "0xD81dF17C3E76a9824b69C76498BBcBF5d991d3Fd",
       abi: [
         {
           inputs: [
@@ -475,7 +475,7 @@ const deployedContracts = {
       inheritedFunctions: {},
     },
     MockAggregator: {
-      address: "0x79aa80021eD7F22A1c494F851A8254733383B232",
+      address: "0x005FC4A3799Ed0dF38aB01547f1afAB7CB580953",
       abi: [
         {
           inputs: [
@@ -619,7 +619,7 @@ const deployedContracts = {
       },
     },
     SimpleERC20: {
-      address: "0x106d24F579D77fbe71CBBF169f6Dc376208e25b5",
+      address: "0xB77b27A3B202ff3cf2CB138CB418e7819EcBCd58",
       abi: [
         {
           inputs: [
