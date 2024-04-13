@@ -23,6 +23,8 @@ describe("Hyperlane Bridge", function () {
     etfToken = (await simpleFactory.deploy("ETF Token", "ETF",0)) as SimpleERC20;
     tokenA = (await simpleFactory.deploy("TokenA", "TKA", 18)) as SimpleERC20;
     tokenB = (await simpleFactory.deploy("TokenB", "TKB", 18)) as SimpleERC20;
+    await tokenA.mint(owner.address, BigNumber.from(1000).mul(decimalFactor).toString());
+    await tokenB.mint(owner.address, BigNumber.from(1000).mul(decimalFactor).toString());
 
     requiredTokens = [
       {
@@ -48,5 +50,18 @@ describe("Hyperlane Bridge", function () {
   it("Should have deployed the etf lock", async function () {
     const etfAddress = await etf.getAddress();
     expect(await etfAddress).to.be.not.null;
+  });
+
+  it("Should be able to Mint the Vault", async function () {
+    const depositInfo = {
+      vaultId: 1,
+      tokens: requiredTokens,
+    };
+
+    expect(await etfToken.balanceOf(owner.address)).to.be.equal(0);
+    expect(await tokenA.balanceOf(await etf.getAddress())).to.be.equal(0);
+    await etf.deposit(depositInfo);
+    // deposited!
+    expect(await tokenA.balanceOf(await etf.getAddress())).to.be.equal(BigNumber.from(10).mul(decimalFactor).toString());
   });
 });
