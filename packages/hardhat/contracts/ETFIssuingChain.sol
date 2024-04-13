@@ -105,7 +105,7 @@ contract ETFIssuingChain {
 			"Vault is not open or empty"
 		);
 
-		require(_chainId == chainId, "ChainId does not match the contract chainId")
+		// require(_chainId == chainId, "ChainId does not match the contract chainId")
 
 		if (vaults[_vaultId].state == VaultState.EMPTY) {
 			for (uint256 i = 0; i < requiredTokens.length; i++) {

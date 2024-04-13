@@ -10,6 +10,7 @@ import PieToken from "./_components/PieToken";
 import TokenBalanceAllowance from "./_components/tokenBalanceAllowance";
 import "./index.css";
 import { BigNumber } from "@ethersproject/bignumber";
+import { Watermark } from "antd";
 import type { NextPage } from "next";
 import { TransactionReceipt } from "viem";
 import { useAccount, useContractRead, useContractWrite, useNetwork, useWaitForTransaction } from "wagmi";
@@ -17,6 +18,12 @@ import { useTransactor } from "~~/hooks/scaffold-eth";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
 import { getParsedError, notification } from "~~/utils/scaffold-eth";
 import { getAllContracts } from "~~/utils/scaffold-eth/contractsData";
+
+// import { DebugContracts } from "./_components/DebugContracts";
+
+// import { DebugContracts } from "./_components/DebugContracts";
+
+// import { DebugContracts } from "./_components/DebugContracts";
 
 const ETF: NextPage = () => {
   const contractsData = getAllContracts();
@@ -156,7 +163,23 @@ const ETF: NextPage = () => {
   }, [tokens]);
 
   return (
-    <>
+    <Watermark
+      zIndex={-9}
+      style={
+        // take the whole screen in the behind all the elements
+        {
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          minHeight: "100%",
+        }
+      }
+      content="XRP Ledger"
+      // image="https://w7.pngwing.com/pngs/459/4/png-transparent-xrp-symbol-black-hd-logo.png"
+      height={130}
+      width={150}
+    >
       <div
         style={{
           backgroundColor: "white",
@@ -169,7 +192,32 @@ const ETF: NextPage = () => {
         }}
         className="card"
       >
-        <h1 className="text-4xl my-0">ETF {bundleId}</h1>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            // take the whole width
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+          }}
+        >
+          <h1 className="text-4xl my-0">ETF #{bundleId}</h1>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              // centering the elements vertically
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            <img width="150" src="https://logowik.com/content/uploads/images/xrp-coin-xrp2517.jpg" alt="XRP Ledger" />
+            <span>EASYA 2024</span>
+          </div>
+        </div>
+        <br></br>
         {/* <p>{displayTxResult(contractsData[contractName].address)}</p> */}
 
         <div
@@ -222,7 +270,7 @@ const ETF: NextPage = () => {
           quantityTokenB={quantityTokenB}
         ></DepositButton>
       </div>
-    </>
+    </Watermark>
   );
 };
 
