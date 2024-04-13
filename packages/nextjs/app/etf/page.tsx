@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { TxReceipt, displayTxResult } from "../debug/_components/contract";
+import { DepositButton } from "./_components/DepositButton";
 import { DepositController } from "./_components/DepositController";
 import { MatrixView } from "./_components/MatrixView";
 import PieToken from "./_components/PieToken";
@@ -17,18 +18,16 @@ import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
 import { getParsedError, notification } from "~~/utils/scaffold-eth";
 import { getAllContracts } from "~~/utils/scaffold-eth/contractsData";
 
-// import { DebugContracts } from "./_components/DebugContracts";
-
-// import { DebugContracts } from "./_components/DebugContracts";
-
-// import { DebugContracts } from "./_components/DebugContracts";
-
 const ETF: NextPage = () => {
   const contractsData = getAllContracts();
   const [bundleId, setBundleId] = useState<string>("1");
   const [bundles, setBundles] = useState<any>();
   const [vault, setVault] = useState<any>({});
-  const [tokens, setTokens] = useState<any>();
+  const [tokens, setTokens] = useState<any>([]);
+
+  const [quantityTokenA, setQuantityTokenA] = useState<any>("");
+  const [quantityTokenB, setQuantityTokenB] = useState<any>("");
+
   // const [resultFee, setResultFee] = useState<any>();
   // const [txValue, setTxValue] = useState<string | bigint>("");
   const writeTxn = useTransactor();
@@ -76,20 +75,7 @@ const ETF: NextPage = () => {
     },
   });
 
-  const etfTokenAddress = "0x00227316A62E8c4A4942231c2001E58a6dDeF408";
-
-  const handleWrite = async () => {
-    if (writeAsync) {
-      try {
-        const makeWriteWithParams = () => writeAsync({ value: BigInt(collateralAmountFee.toString()) });
-        await writeTxn(makeWriteWithParams);
-        // onChange();
-      } catch (e: any) {
-        const message = getParsedError(e);
-        notification.error(message);
-      }
-    }
-  };
+  const etfTokenAddress = "0x106d24F579D77fbe71CBBF169f6Dc376208e25b5";
 
   useEffect(() => {
     async function fetchData() {
@@ -113,6 +99,7 @@ const ETF: NextPage = () => {
         const { data } = await vaultSate();
         console.log("vault", data);
         setVault(data);
+        // if type of data is Array, then it is a vault
       }
     }
     fetchData();
@@ -131,6 +118,16 @@ const ETF: NextPage = () => {
     }
     fetchData();
   }, []);
+
+
+  useEffect(() => {
+    if(!tokens || tokens.length < 2) {
+      return;
+    }
+
+    setQuantityTokenA(tokens[0]._quantity.toString());
+    setQuantityTokenB(tokens[1]._quantity.toString());
+  }, [tokens]);
 
   return (
     <>
@@ -162,47 +159,41 @@ const ETF: NextPage = () => {
         </div>
         {/* {JSON.stringify(vault)} */}
         <br></br>
-        <TokenBalanceAllowance name={"ETF"} tokenAddress={etfTokenAddress} />
+        <TokenBalanceAllowance isApprove name={"ETF"} tokenAddress={etfTokenAddress} />
         {tokens &&
           tokens.map((token: any, index: number) => {
             return <TokenBalanceAllowance key={index} name={index.toString()} tokenAddress={token._address} />;
           })}
 
-        {/* <b>ETF Token Balance</b>
-        {displayTxResult(balance)}
-        <br></br> */}
-        {/* <button className="btn btn-secondary btn-sm" disabled={writeDisabled || isLoading} onClick={handleWrite}>
-          {isLoading && <span className="loading loading-spinner loading-xs"></span>}
-          Send 💸
-        </button>
-        {txResult ? (
-          <div className="flex-grow basis-0">
-            {displayedTxResult ? <TxReceipt txResult={displayedTxResult} /> : null}
-          </div>
-        ) : null} */}
         <br></br>
         <br></br>
         <h1>Collateral Vault</h1>
         <p>Bundle ID: {bundleId}</p>
         <b>Required Tokens</b>
         <DepositController
-          bundleId={bundleId}
-          quantity={0}
-          setQuantity={0}
+          quantity={quantityTokenA}
+          setQuantity={setQuantityTokenA}
           requiredQuantity={tokens && tokens[0] ? tokens[0]._quantity : 0}
           tokenAddress={tokens && tokens[0] ? tokens[0]._address : ""}
           chainId={tokens && tokens[0] ? tokens[0]._chainId : ""}
         />
         <DepositController
-          bundleId={bundleId}
-          quantity={0}
-          setQuantity={0}
+          quantity={quantityTokenB}
+          setQuantity={setQuantityTokenB}
           requiredQuantity={tokens && tokens[1] ? tokens[1]._quantity : 0}
           tokenAddress={tokens && tokens[1] ? tokens[1]._address : ""}
           chainId={tokens && tokens[1] ? tokens[1]._chainId : ""}
         />
         <br></br>
         <br></br>
+        <DepositButton
+          bundleId={bundleId}
+          state={vault.state}
+          tokenAddressA={tokens && tokens[0] ? tokens[0]._address : ""}
+          quantityTokenA={quantityTokenA}
+          tokenAddressB={tokens && tokens[1] ? tokens[1]._address : ""}
+          quantityTokenB={quantityTokenB}
+        ></DepositButton>
       </div>
     </>
   );
