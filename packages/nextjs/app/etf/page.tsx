@@ -2,13 +2,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TxReceipt, displayTxResult } from "../debug/_components/contract";
+import { CollateralVaultView } from "./_components/CollateralVault";
+import { Deposit } from "./_components/Deposit";
 import { MatrixView } from "./_components/MatrixView";
+import PieToken from "./_components/PieToken";
+import TokenBalanceAllowance from "./_components/tokenBalanceAllowance";
 import "./index.css";
+import { BigNumber } from "@ethersproject/bignumber";
 import type { NextPage } from "next";
-import { useContractRead } from "wagmi";
+import { TransactionReceipt } from "viem";
+import { useAccount, useContractRead, useContractWrite, useNetwork, useWaitForTransaction } from "wagmi";
+import { useTransactor } from "~~/hooks/scaffold-eth";
+import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
 import { getParsedError, notification } from "~~/utils/scaffold-eth";
 import { getAllContracts } from "~~/utils/scaffold-eth/contractsData";
-import { Deposit } from "./_components/Deposit";
+
+// import { DebugContracts } from "./_components/DebugContracts";
 
 const ETF: NextPage = () => {
   const contractsData = getAllContracts();
@@ -18,7 +28,12 @@ const ETF: NextPage = () => {
   const [tokens, setTokens] = useState<any>();
   // const [resultFee, setResultFee] = useState<any>();
   // const [txValue, setTxValue] = useState<string | bigint>("");
+  const writeTxn = useTransactor();
+  const { chain } = useNetwork();
 
+  const { targetNetwork } = useTargetNetwork();
+  const writeDisabled = !chain || chain?.id !== targetNetwork.id;
+  const { address: connectedAddress } = useAccount();
 
   const contractName = "ETFIssuingChain";
 
@@ -58,8 +73,20 @@ const ETF: NextPage = () => {
     },
   });
 
-  // const etfTokenAddress = "0xEbC26af07cbbE8E87b8Fe3A1F5ac02950D3Fa2A8";
+  const etfTokenAddress = "0x00227316A62E8c4A4942231c2001E58a6dDeF408";
 
+  const handleWrite = async () => {
+    if (writeAsync) {
+      try {
+        const makeWriteWithParams = () => writeAsync({ value: BigInt(collateralAmountFee.toString()) });
+        await writeTxn(makeWriteWithParams);
+        // onChange();
+      } catch (e: any) {
+        const message = getParsedError(e);
+        notification.error(message);
+      }
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -128,10 +155,15 @@ const ETF: NextPage = () => {
           }}
         >
           {bundles && <MatrixView setBundleId={setBundleId} bundleId={bundleId} bundles={bundles} />}
+          {vault && vault._tokens && <PieToken input={vault}></PieToken>}
         </div>
         {/* {JSON.stringify(vault)} */}
         <br></br>
-
+        <TokenBalanceAllowance name={"ETF"} tokenAddress={etfTokenAddress} />
+        {tokens &&
+          tokens.map((token: any, index: number) => {
+            return <TokenBalanceAllowance key={index} name={index.toString()} tokenAddress={token._address} />;
+          })}
 
         {/* <b>ETF Token Balance</b>
         {displayTxResult(balance)}
@@ -147,8 +179,8 @@ const ETF: NextPage = () => {
         ) : null} */}
         <br></br>
         <br></br>
-        <br></br>
         <Deposit bundleId={bundleId} />
+        <br></br>
         <br></br>
       </div>
     </>
