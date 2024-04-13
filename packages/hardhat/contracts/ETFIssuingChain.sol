@@ -212,6 +212,12 @@ contract ETFIssuingChain {
 	}
 
 	function burn(uint256 _vaultId) public {
+		require(
+			vaults[_vaultId].state == VaultState.MINTED,
+			"Vault is not minted"
+		);
+		// require to pay back the etfToken
+		ISimpleERC20(etfToken).burn(msg.sender, etfTokenPerVault);
 		for (uint256 j = 0; j < vaults[_vaultId]._tokens.length; j++) {
 			IERC20(vaults[_vaultId]._tokens[j]._address).transfer(
 				msg.sender,

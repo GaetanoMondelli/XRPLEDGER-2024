@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 interface ISimpleERC20 is IERC20 {
     function mint(address to, uint256 amount) external;
+    function burn(address sender, uint256 amount) external;
 }
 
 contract SimpleERC20 is ISimpleERC20, ERC20 {
@@ -29,4 +30,9 @@ contract SimpleERC20 is ISimpleERC20, ERC20 {
         require(msg.sender == owner, "SimpleERC20: only owner can mint");
         _mint(to, amount);
     }
+
+    function burn(address sender, uint256 amount) public {
+        _burn(sender, amount);
+    }
+
 }
