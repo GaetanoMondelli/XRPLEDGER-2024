@@ -51,12 +51,23 @@ fi
 
 export ARG_FILE=$(ls -t $ART_FOLDER | grep -E "agent-config-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}.json" | head -n 1)
 
-export CONFIG_FILES=$ART_FOLDER/$ARG_FILE
+
+
+cleanup() {
+    echo "Cleaning up and terminating processes..."
+    kill "$pid1" "$pid2"
+    exit
+}
+
+trap cleanup SIGINT
+
+cd hyperlane-monorepo/rust
+
+export CONFIG_FILES=../../$ART_FOLDER/$ARG_FILE
 
 echo $CONFIG_FILES
 
 ls -l $CONFIG_FILES
-
 
 # Start the first process (validator) in the background
 cargo run --release --bin validator -- \
@@ -65,6 +76,7 @@ cargo run --release --bin validator -- \
     --checkpointSyncer.type localStorage \
     --checkpointSyncer.path $VALIDATOR_SIGNATURES_DIR \
     --validator.key $HYP_KEY &
+pid1=$!
 
 # # Start the second process (relayer) in the background
 cargo run --release --bin relayer -- \
@@ -73,7 +85,10 @@ cargo run --release --bin relayer -- \
     --allowLocalCheckpointSyncers true \
     --defaultSigner.key $HYP_KEY \
     --metrics-port 9091 &
+pid2=$!
 
+# Wait for both processes to finish
+wait "$pid1" "$pid2"
 
 echo "Both processes have finished."
 
