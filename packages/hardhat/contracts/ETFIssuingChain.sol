@@ -148,6 +148,7 @@ contract ETFIssuingChain {
 				contributorsByVault[_vaultId].push(msg.sender);
 			}
 
+
 			accountContributionsPerVault[_vaultId][msg.sender] += _tokens[i]
 				._quantity;
 		}
@@ -187,4 +188,37 @@ contract ETFIssuingChain {
 		_deposit(_depositInfo, chainId);
 	}
 
+	function handle(
+		uint32 _origin,
+		bytes32 _sender,
+		bytes calldata _message
+	) external payable {
+		require(
+			bytes32ToAddress(_sender) == sideChainLock,
+			"Sender is not the sideChainLock"
+		);
+
+		DepositInfo memory _depositInfo = abi.decode(_message, (DepositInfo));
+		uint32 _chainId = _depositInfo.tokens[0]._chainId;
+		_deposit(_depositInfo, _chainId);
+	}
+
+	function burn(uint256 _vaultId) public {
+		for (uint256 j = 0; j < vaults[_vaultId]._tokens.length; j++) {
+			IERC20(vaults[_vaultId]._tokens[j]._address).transfer(
+				msg.sender,
+				vaults[_vaultId]._tokens[j]._quantity
+			);
+		}
+	}
+
+	function addressToBytes32(address _addr) internal pure returns (bytes32) {
+		return bytes32(uint256(uint160(_addr)));
+	}
+
+	function bytes32ToAddress(
+		bytes32 _bytes32
+	) internal pure returns (address) {
+		return address(uint160(uint256(_bytes32)));
+	}
 }
