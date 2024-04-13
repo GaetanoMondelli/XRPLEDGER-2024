@@ -21,12 +21,12 @@ contract SimpleERC20 is ISimpleERC20, ERC20 {
 	}
 
     function setOwner(address _owner) public {
-        require(msg.sender == owner, "only owner can change owner");
+        require(msg.sender == owner, "SimpleERC20: only owner can change owner");
         owner = _owner;
     }
 
     function mint(address to, uint256 amount) public {
-        require(msg.sender == owner, "only owner can mint");
+        require(msg.sender == owner, "SimpleERC20: only owner can mint");
         _mint(to, amount);
     }
 }
