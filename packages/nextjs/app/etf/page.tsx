@@ -28,6 +28,8 @@ const ETF: NextPage = () => {
   const [quantityTokenA, setQuantityTokenA] = useState<any>("");
   const [quantityTokenB, setQuantityTokenB] = useState<any>("");
 
+  const [etfTokenAddress, setEtfTokenAddress] = useState<any>("0x106d24F579D77fbe71CBBF169f6Dc376208e25b5");
+
   // const [resultFee, setResultFee] = useState<any>();
   // const [txValue, setTxValue] = useState<string | bigint>("");
   const writeTxn = useTransactor();
@@ -42,6 +44,18 @@ const ETF: NextPage = () => {
   const { isFetching: isFetToken, refetch: tokensFetch } = useContractRead({
     address: contractsData[contractName].address,
     functionName: "getRequiredTokens",
+    abi: contractsData[contractName].abi,
+    args: [],
+    enabled: false,
+    onError: (error: any) => {
+      const parsedErrror = getParsedError(error);
+      console.log(parsedErrror);
+    },
+  });
+
+  const { isFetching: isETFTokenAddressFetching, refetch: etfTokenAddressFetch } = useContractRead({
+    address: contractsData[contractName].address,
+    functionName: "etfToken",
     abi: contractsData[contractName].abi,
     args: [],
     enabled: false,
@@ -75,7 +89,7 @@ const ETF: NextPage = () => {
     },
   });
 
-  const etfTokenAddress = "0x106d24F579D77fbe71CBBF169f6Dc376208e25b5";
+  // const etfTokenAddress = "0x106d24F579D77fbe71CBBF169f6Dc376208e25b5";
 
   useEffect(() => {
     async function fetchData() {
@@ -85,6 +99,19 @@ const ETF: NextPage = () => {
       if (refetch) {
         const { data } = await refetch();
         setBundles(data);
+      }
+    }
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    async function fetchData() {
+      if (isETFTokenAddressFetching) {
+        return;
+      }
+      if (etfTokenAddressFetch) {
+        const { data } = await etfTokenAddressFetch();
+        setEtfTokenAddress(data);
       }
     }
     fetchData();
@@ -119,9 +146,8 @@ const ETF: NextPage = () => {
     fetchData();
   }, []);
 
-
   useEffect(() => {
-    if(!tokens || tokens.length < 2) {
+    if (!tokens || tokens.length < 2) {
       return;
     }
 
@@ -159,7 +185,7 @@ const ETF: NextPage = () => {
         </div>
         {/* {JSON.stringify(vault)} */}
         <br></br>
-        <TokenBalanceAllowance isApprove name={"ETF"} tokenAddress={etfTokenAddress} />
+        {etfTokenAddress && <TokenBalanceAllowance isApprove name={"ETF"} tokenAddress={etfTokenAddress} />}
         {tokens &&
           tokens.map((token: any, index: number) => {
             return <TokenBalanceAllowance key={index} name={index.toString()} tokenAddress={token._address} />;
@@ -169,6 +195,7 @@ const ETF: NextPage = () => {
         <br></br>
         <h1>Collateral Vault</h1>
         <p>Bundle ID: {bundleId}</p>
+        {etfTokenAddress}
         <b>Required Tokens</b>
         <DepositController
           quantity={quantityTokenA}

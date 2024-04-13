@@ -76,6 +76,9 @@ export function DepositButton({
       }}
       onClick={async () => {
         await depositAsync();
+        // sleep for 2 seconds
+        await new Promise((r) => setTimeout(r, 6000));
+        window.location.reload();
       }}
       disabled={isdepLoading}
     >
@@ -94,6 +97,10 @@ export function DepositButton({
       disabled={isburnLoading}
       onClick={async () => {
         await burnAsync();
+        // reload the page
+        await new Promise((r) => setTimeout(r, 4000));
+
+        window.location.reload();
       }}
     >
       Burn
