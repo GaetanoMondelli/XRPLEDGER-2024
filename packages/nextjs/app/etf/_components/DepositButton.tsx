@@ -6,12 +6,14 @@ const xrpledgerchainId = 1440002;
 
 export function DepositButton({
   bundleId,
+  state,
   tokenAddressA,
   quantityTokenA,
   tokenAddressB,
   quantityTokenB,
 }: {
   bundleId: string;
+  state: any;
   tokenAddressA: any;
   quantityTokenA: any;
   tokenAddressB: any;
@@ -19,6 +21,17 @@ export function DepositButton({
 }) {
   const contractsData = getAllContracts();
   const { address: connectedAddress } = useAccount();
+
+  const {
+    data: burn,
+    isLoading: isburnLoading,
+    writeAsync: burnAsync,
+  } = useContractWrite({
+    address: contractsData["ETFIssuingChain"].address,
+    functionName: "burn",
+    abi: contractsData["ETFIssuingChain"].abi,
+    args: [bundleId],
+  });
 
   const contractName = "ETFIssuingChain";
   const {
@@ -52,19 +65,38 @@ export function DepositButton({
     ],
   });
 
-  return (
+  return state < 2 ? (
     <button
       className="bg-green-500 hover:bg-green-700 text-white size font-bold py-2 px-6 rounded-full"
-      style={{ 
+      style={{
         marginLeft: "4%",
         marginRight: "4%",
-        cursor: "pointer", fontSize: "18px" }}
+        cursor: "pointer",
+        fontSize: "18px",
+      }}
       onClick={async () => {
         await depositAsync();
       }}
       disabled={isdepLoading}
     >
       Deposit
+    </button>
+  ) : (
+    <button
+      //   className="bg-green-500 hover:bg-green-700 text-white size font-bold py-2 px-6 rounded-full"
+      className="bg-red-500 hover:bg-red-700 text-white size font-bold py-2 px-6 rounded-full"
+      style={{
+        marginLeft: "4%",
+        marginRight: "4%",
+        cursor: "pointer",
+        fontSize: "18px",
+      }}
+      disabled={isburnLoading}
+      onClick={async () => {
+        await burnAsync();
+      }}
+    >
+      Burn
     </button>
   );
 }

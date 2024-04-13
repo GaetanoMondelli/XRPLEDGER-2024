@@ -22,8 +22,6 @@ export function DepositController({
 }) {
   const contractsData = getAllContracts();
   const writeTxn = useTransactor();
-  // const { chain } = useNetwork();
-  // const { targetNetwork } = useTargetNetwork();
   const contractName = "ETFIssuingChain";
   const xrpledgerchainId = 1440002;
   const contractSimpleName = "SimpleERC20";
@@ -36,7 +34,7 @@ export function DepositController({
     address: tokenAddress,
     functionName: "approve",
     abi: contractsData[contractSimpleName].abi,
-    args: [contractsData[contractName].address, setQuantity],
+    args: [contractsData[contractName].address, quantity],
   });
 
   return (
