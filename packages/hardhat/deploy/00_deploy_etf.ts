@@ -1,6 +1,7 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
 import { SimpleERC20, ETFIssuingChain } from "../typechain-types";
+// import { NonceManager, Signer } from 'ethers';
 // import * as CORE_DEPLOYMENT from "../../../../bridge/artifacts/core-deployment-2024-04-11-01-28-34.json";
 // import * as RECEIVER_DEPLOYMENT from "../deployments/sepolia/HyperlaneMessageReceiver.json";
 import { BigNumber } from "@ethersproject/bignumber";
@@ -18,9 +19,12 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
   const decimalFactor = BigNumber.from(10).pow(18);
   const tokenPerVault = BigNumber.from(100).mul(decimalFactor).toString();
 
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   console.log("Deploying ETF contract");
   if (hre.network.name === "xrpledger") {
     //deploy tokenA and tokenB contracts
+
     const requiredTokens = [
       {
         _address: "",
@@ -38,36 +42,65 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
       },
     ];
 
-    for (let i = 0; i < requiredTokens.length; i++) {
-      await deploy("SimpleERC20", {
-        from: deployer,
-        args: ["Token" + i, "TK" + i, 0],
-        log: true,
-      });
-      await deploy("MockAggregator", {
-        from: deployer,
-        args: [10 * i, 18],
-        log: true,
-      });
-      const t = await hre.ethers.getContract<SimpleERC20>("SimpleERC20", deployer);
-      await t.mint(deployer, BigNumber.from(1000).mul(BigNumber.from(10).pow(18)).toString());
-      requiredTokens[i]._address = await t.getAddress();
-      requiredTokens[i]._aggregator = await (await hre.ethers.getContract("MockAggregator", deployer)).getAddress();
-    }
+    await deploy("SimpleERC20", {
+      from: deployer,
+      args: ["TokenA", "TA", 0],
+      log: true,
+    });
+
+    await sleep(10000);
+
+    const t1 = await hre.ethers.getContract<SimpleERC20>("SimpleERC20", deployer);
+    await t1.mint(deployer, BigNumber.from(1000).mul(BigNumber.from(10).pow(18)).toString());
+    await sleep(10000);
+
+    await deploy("SimpleERC20", {
+      from: deployer,
+      args: ["TokenB", "TB", 0],
+      log: true,
+    });
+
+    const t2 = await hre.ethers.getContract<SimpleERC20>("SimpleERC20", deployer);
+    await t2.mint(deployer, BigNumber.from(1000).mul(BigNumber.from(10).pow(18)).toString());
+    await sleep(10000);
+
+    await deploy("MockAggregator", {
+      from: deployer,
+      args: [20, 18],
+      log: true,
+    });
+    await sleep(10000);
+    const aggr1 = await hre.ethers.getContract("MockAggregator", deployer);
+
+    await deploy("MockAggregator", {
+      from: deployer,
+      args: [10, 18],
+      log: true,
+    });
+    await sleep(10000);
+    const aggr2 = await hre.ethers.getContract("MockAggregator", deployer);
+
+    requiredTokens[0]._address = await t1.getAddress();
+    requiredTokens[0]._aggregator = await aggr1.getAddress();
+    requiredTokens[1]._address = await t2.getAddress();
+    requiredTokens[1]._aggregator = await aggr2.getAddress();
 
     await deploy("SimpleERC20", {
       from: deployer,
       args: ["ETFToken", "ETF", 0],
       log: true,
     });
+    await sleep(10000);
     const etfToken = await hre.ethers.getContract<SimpleERC20>("SimpleERC20", deployer);
     console.log("ETF Token address: ", await etfToken.getAddress());
 
-    await deploy("ETF Lock on issuing chain", {
+    await deploy("ETFIssuingChain", {
       from: deployer,
       args: [xrpledgerChainId, requiredTokens, await etfToken.getAddress(), tokenPerVault],
       log: true,
     });
+    await sleep(20000);
+
     const etf = await hre.ethers.getContract<ETFIssuingChain>("ETFIssuingChain", deployer);
     await etfToken.setOwner(await etf.getAddress());
   }
