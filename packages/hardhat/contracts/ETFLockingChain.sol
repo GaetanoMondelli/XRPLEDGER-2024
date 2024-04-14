@@ -41,7 +41,7 @@ struct DepositInfo {
 	TokenQuantity[] tokens;
 }
 
-contract ETFIssuingChain {
+contract ETFLockingChain {
 	address public sideChainLock;
 	TokenQuantity[] public requiredTokens;
 	mapping(address => TokenQuantity) public addressToToken;
@@ -78,6 +78,7 @@ contract ETFIssuingChain {
 		securityModule = IInterchainSecurityModule(_securityModule);
 		for (uint256 i = 0; i < _requiredTokens.length; i++) {
 			requiredTokens.push(_requiredTokens[i]);
+			addressToToken[_requiredTokens[i]._address] = _requiredTokens[i];
 		}
 	}
 
@@ -132,12 +133,6 @@ contract ETFIssuingChain {
 					"Token chainId does not match the chainId of the contract"
 				);
 			}
-			console.log(
-				"Token address: %s",
-				_tokens[i]._address,
-				i,
-				vaults[_vaultId]._tokens.length
-			);
 			if (
 				_tokens[i]._quantity + vaults[_vaultId]._tokens[i]._quantity >
 				addressToToken[_tokens[i]._address]._quantity
@@ -179,7 +174,9 @@ contract ETFIssuingChain {
 		vaults[_vaultId].state = VaultState.MINTED;
 	}
 
-	function depositAndNotify(DepositInfo calldata _depositInfo) public {
+	function depositAndNotify(
+		DepositInfo calldata _depositInfo
+	) public payable {
 		_deposit(_depositInfo, chainId);
 		bytes32 mainChainLockBytes32 = addressToBytes32(mainChainLock);
 		uint256 fee = outbox.quoteDispatch(

@@ -5,6 +5,7 @@ import { SimpleERC20, ETFIssuingChain } from "../typechain-types";
 // import * as CORE_DEPLOYMENT from "../../../../bridge/artifacts/core-deployment-2024-04-11-01-28-34.json";
 // import * as RECEIVER_DEPLOYMENT from "../deployments/sepolia/HyperlaneMessageReceiver.json";
 import { BigNumber } from "@ethersproject/bignumber";
+import * as CORE_DEPLOYMENT from "../../../bridge/artifacts/core-deployment-2024-04-13-13-20-34.json";
 
 /**
  * Deploys a contract named "YourContract" using the deployer account and
@@ -16,6 +17,7 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const xrpledgerChainId = 1440002;
+  const sepoliaChainId = 11155111;
   const decimalFactor = BigNumber.from(10).pow(18);
   const tokenPerVault = BigNumber.from(100).mul(decimalFactor).toString();
 
@@ -39,6 +41,13 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
         _chainId: xrpledgerChainId,
         _contributor: deployer,
         _aggregator: "",
+      },
+      {
+        _address: "0x2C5e23Cdbff221B707D1a42577764586791B5074",
+        _quantity: BigNumber.from(100).mul(decimalFactor).toString(),
+        _chainId: sepoliaChainId,
+        _contributor: deployer,
+        _aggregator: "0x005FC4A3799Ed0dF38aB01547f1afAB7CB580953",
       },
     ];
 
@@ -103,6 +112,62 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
 
     const etf = await hre.ethers.getContract<ETFIssuingChain>("ETFIssuingChain", deployer);
     await etfToken.setOwner(await etf.getAddress());
+  }
+
+  if (hre.network.name === "sepolia") {
+    // deploy ETFLockingChain
+
+    await deploy("SimpleERC20", {
+      from: deployer,
+      args: ["TokenC", "TC", 0],
+      log: true,
+    });
+    const tokenC = await hre.ethers.getContract<SimpleERC20>("SimpleERC20", deployer);
+
+    await deploy("ETFLockingChain", {
+      from: deployer,
+      args: [
+        sepoliaChainId,
+
+        [
+          {
+            _address: await tokenC.getAddress(),
+            _quantity: BigNumber.from(100).mul(decimalFactor).toString(),
+            _chainId: sepoliaChainId,
+            _contributor: deployer,
+            _aggregator: deployer, // we do not care we calculate contribution in IssuingChain
+          },
+        ],
+        CORE_DEPLOYMENT.sepolia.mailbox,
+        CORE_DEPLOYMENT.sepolia.interchainSecurityModule,
+      ],
+      log: true,
+    });
+    const etfLockingChain = await hre.ethers.getContract("ETFLockingChain", deployer);
+    console.log("ETFLockingChain address: ", await etfLockingChain.getAddress());
+
+    await tokenC.mint(deployer, BigNumber.from(1000).mul(BigNumber.from(10).pow(18)).toString());
+    await tokenC.approve(
+      await etfLockingChain.getAddress(),
+      BigNumber.from(1000).mul(BigNumber.from(10).pow(18)).toString(),
+    );
+
+    // verify contract hardhat
+    await hre.run("verify:verify", {
+      address: await etfLockingChain.getAddress(),
+      constructorArguments: [
+        xrpledgerChainId,
+        {
+          _address: await tokenC.getAddress(),
+          _quantity: BigNumber.from(100).mul(decimalFactor).toString(),
+          _chainId: sepoliaChainId,
+          _contributor: deployer,
+          _aggregator: "", // we do not care we calculate contribution in IssuingChain
+        },
+        CORE_DEPLOYMENT.sepolia.mailbox,
+        CORE_DEPLOYMENT.sepolia.interchainSecurityModule,
+      ],
+    });
   }
 };
 
