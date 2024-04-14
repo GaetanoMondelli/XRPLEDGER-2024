@@ -25,6 +25,20 @@ import { getAllContracts } from "~~/utils/scaffold-eth/contractsData";
 
 // import { DebugContracts } from "./_components/DebugContracts";
 
+// import { DebugContracts } from "./_components/DebugContracts";
+
+// import { DebugContracts } from "./_components/DebugContracts";
+
+// import { DebugContracts } from "./_components/DebugContracts";
+
+// import { DebugContracts } from "./_components/DebugContracts";
+
+// import { DebugContracts } from "./_components/DebugContracts";
+
+// import { DebugContracts } from "./_components/DebugContracts";
+
+// import { DebugContracts } from "./_components/DebugContracts";
+
 const ETF: NextPage = () => {
   const contractsData = getAllContracts();
   const [bundleId, setBundleId] = useState<string>("1");
@@ -34,6 +48,7 @@ const ETF: NextPage = () => {
 
   const [quantityTokenA, setQuantityTokenA] = useState<any>("");
   const [quantityTokenB, setQuantityTokenB] = useState<any>("");
+  const [quantityTokenC, setQuantityTokenC] = useState<any>("");
 
   const [etfTokenAddress, setEtfTokenAddress] = useState<any>("0x106d24F579D77fbe71CBBF169f6Dc376208e25b5");
 
@@ -160,6 +175,7 @@ const ETF: NextPage = () => {
 
     setQuantityTokenA(tokens[0]._quantity.toString());
     setQuantityTokenB(tokens[1]._quantity.toString());
+    setQuantityTokenC(tokens[2]._quantity.toString());
   }, [tokens]);
 
   return (
@@ -189,6 +205,7 @@ const ETF: NextPage = () => {
           // centering the card
           margin: "auto",
           width: "1000px",
+          marginTop: "30px",
         }}
         className="card"
       >
@@ -236,7 +253,20 @@ const ETF: NextPage = () => {
         {etfTokenAddress && <TokenBalanceAllowance isApprove name={"ETF"} tokenAddress={etfTokenAddress} />}
         {tokens &&
           tokens.map((token: any, index: number) => {
-            return <TokenBalanceAllowance key={index} name={index.toString()} tokenAddress={token._address} />;
+            return chain?.id === token._chainId ? (
+              <TokenBalanceAllowance key={index} name={index.toString()} tokenAddress={token._address} />
+            ) : (
+              <b>
+                {index} Token:{" "}
+                {
+                  // only show first 4 characters of the address and last 4 characters of the address
+                  token._address.slice(0, 6) +
+                    "..." +
+                    token._address.slice(token._address.length - 4, token._address.length)
+                }{" "}
+                on another chain (chainId:{token._chainId})
+              </b>
+            );
           })}
 
         <br></br>
@@ -259,15 +289,24 @@ const ETF: NextPage = () => {
           tokenAddress={tokens && tokens[1] ? tokens[1]._address : ""}
           chainId={tokens && tokens[1] ? tokens[1]._chainId : ""}
         />
+        <DepositController
+          quantity={quantityTokenB}
+          setQuantity={setQuantityTokenB}
+          requiredQuantity={tokens && tokens[2] ? tokens[2]._quantity : 0}
+          tokenAddress={tokens && tokens[2] ? tokens[2]._address : ""}
+          chainId={tokens && tokens[2] ? tokens[2]._chainId : ""}
+        />
         <br></br>
         <br></br>
         <DepositButton
           bundleId={bundleId}
-          state={vault.state}
+          state={vault?.state}
           tokenAddressA={tokens && tokens[0] ? tokens[0]._address : ""}
           quantityTokenA={quantityTokenA}
           tokenAddressB={tokens && tokens[1] ? tokens[1]._address : ""}
           quantityTokenB={quantityTokenB}
+          tokenAddressC={tokens && tokens[2] ? tokens[2]._address : ""}
+          quantityTokenC={quantityTokenC}
         ></DepositButton>
       </div>
     </Watermark>
