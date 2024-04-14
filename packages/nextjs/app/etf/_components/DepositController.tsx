@@ -57,7 +57,7 @@ export function DepositController({
           style={{
             display: "flex",
             flexDirection: "row",
-              justifyContent: "space-between",
+            // justifyContent: "space-between",
             width: "100%",
             gap: "50px",
           }}
@@ -96,15 +96,17 @@ export function DepositController({
               </button>
             </div>
           )}
-          <div>
-            <p>Quantity:</p>
-            <input
-              className="border border-gray-400 rounded-md"
-              type="number"
-              value={quantity}
-              onChange={e => setQuantity(e.target.value)}
-            ></input>
-          </div>
+          {chainId === xrpledgerchainId && (
+            <div>
+              <p>Quantity:</p>
+              <input
+                className="border border-gray-400 rounded-md"
+                type="number"
+                value={quantity}
+                onChange={e => setQuantity(e.target.value)}
+              ></input>
+            </div>
+          )}
           {/* {chainId === xrpledgerchainId && (
             <div>
               <p>Deposit 100 token</p>
