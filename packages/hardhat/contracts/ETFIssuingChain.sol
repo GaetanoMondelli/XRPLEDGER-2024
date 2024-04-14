@@ -235,10 +235,12 @@ contract ETFIssuingChain {
 		// require to pay back the etfToken
 		ISimpleERC20(etfToken).burn(msg.sender, etfTokenPerVault);
 		for (uint256 j = 0; j < vaults[_vaultId]._tokens.length; j++) {
-			IERC20(vaults[_vaultId]._tokens[j]._address).transfer(
-				msg.sender,
-				vaults[_vaultId]._tokens[j]._quantity
-			);
+			if (vaults[_vaultId]._tokens[j]._chainId == chainId) {
+				IERC20(vaults[_vaultId]._tokens[j]._address).transfer(
+					msg.sender,
+					vaults[_vaultId]._tokens[j]._quantity
+				);
+			}
 		}
 		vaults[_vaultId].state = VaultState.BURNED;
 	}
