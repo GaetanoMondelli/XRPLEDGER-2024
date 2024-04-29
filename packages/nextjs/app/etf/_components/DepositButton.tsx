@@ -132,24 +132,26 @@ export function DepositButton({
       <hr></hr>
       <br></br>
 
-      <button
-        className="bg-orange-500 hover:bg-orange-700 text-white size font-bold py-2 px-6 rounded-full"
-        style={{
-          marginLeft: "4%",
-          marginRight: "4%",
-          cursor: "pointer",
-          fontSize: "18px",
-        }}
-        onClick={async () => {
-          await replayMessageAsync();
-          // sleep for 2 seconds
-          await new Promise(r => setTimeout(r, 6000));
-          window.location.reload();
-        }}
-        disabled={isdepLoading}
-      >
-        Fetch and Replay Messages
-      </button>
+      {["42", "27", "12", "65", "7", "18", "71"].includes(bundleId.toString()) && (
+        <button
+          className="bg-orange-500 hover:bg-orange-700 text-white size font-bold py-2 px-6 rounded-full"
+          style={{
+            marginLeft: "4%",
+            marginRight: "4%",
+            cursor: "pointer",
+            fontSize: "18px",
+          }}
+          onClick={async () => {
+            await replayMessageAsync();
+            // sleep for 2 seconds
+            await new Promise(r => setTimeout(r, 6000));
+            window.location.reload();
+          }}
+          disabled={isdepLoading}
+        >
+          Fetch and Replay Messages
+        </button>
+      )}
     </>
   ) : state == 2 ? (
     <button
