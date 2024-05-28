@@ -220,26 +220,27 @@ In Uniswap v4, hooks are important because they enable:
 
 For XTF’s ETF funds, hooks are equally important. Here is how they can be used:
 
-[statemachine](/state-machine.png)
+![statemachine](/state-machine.png)
 
-1.	_START_CONTRIBUTION and _START_CONTRIBUTION_EXTERNAL_CHAIN:
+1. _START_CONTRIBUTION and _START_CONTRIBUTION_EXTERNAL_CHAIN:
 	- Hook: Pre-contribution hook.
 	- Usage: Validate and initialize contributions from primary and external chains, ensuring that all necessary prerequisites are met before the state transition.
-2.	_REACH_FULL_PRIMARY_CHAINS and _REACH_FULL_SIDECHAINS:
+2. _REACH_FULL_PRIMARY_CHAINS and _REACH_FULL_SIDECHAINS:
 	- Hook: Contribution completion hook.
 	- Usage: Trigger actions when contributions reach the required thresholds. This can include logging, notifications, or executing specific business logic like asset rebalancing.
 3. _DISTRIBUTE_ETFTOKENS_TO_CONTRIBUTORS and _MINT_NFT_VOTE/GOVERNANCE TOKEN:
 	- Hook: Token distribution hook.
 	- Usage: Ensure accurate distribution of ETF tokens and minting of governance tokens. Additionally checks or state updates can be performed here to ensure integrity and compliance.
-4.	_LOCK_PERIOD:
+4. _LOCK_PERIOD:
 	- Hook: Lock period initiation hook.
 	- Usage: Apply custom logic at the start of the lock period, such as setting up timers, logging, or initializing state variables relevant to the lock period.
 5. _ENABLE_REDEMPTION:
 	- Hook: Redemption enablement hook.
 	- Usage: Perform checks and update states to allow redemption, ensuring that all conditions are met before users can redeem their tokens.
-6.	_BURN_ETF_VOTES and _BURN_NFT_VOTE:
+6. _BURN_ETF_VOTES and _BURN_NFT_VOTE:
 	- Hook: Pre-redeeming hook.
 	- Possible Usage: Validate the burn actions, ensuring that the votes or tokens being burned are legitimate and that the redemption process is securely initiated.
+
 
 # INDEX AGGREGATOR
 
