@@ -206,7 +206,55 @@ Since assets are securely and transparently stored across different blockchains,
 
 The [ETFLock.test](packages/hardhat/test/ETFIssuingChain.ts) checks basic construction and operations of the ETF lock. 
 
+# HOOKS
 
+XTF wants to encourage a robust and flexible system for managing index funds. Hooks enable XTF to implement custom business logic, enhance security, and ensure seamless interaction with other protocols and chains. This modularity and flexibility are crucial for adapting to the dynamic nature of DeFi and for providing users with a reliable and feature-rich investment platform.
+Hooks in [Uniswap v4](https://docs.uniswap.org/contracts/v4/overview) are a powerful feature that allows developers to introduce custom logic at various stages of a transaction’s lifecycle. They provide a way to extend the protocol's functionality without modifying its core code, making it highly modular and flexible. These hooks can be utilized to perform actions such as validating transactions, updating states, or integrating with external systems, enhancing the protocol’s capability and adaptability. Here are some [examples for Uniswap v4](https://github.com/ora-io/awesome-uniswap-hooks)
+
+
+In Uniswap v4, hooks are important because they enable:
+
+- Custom Logic implementation: Devs can add logic to transactions, enabling more complex strategies and interactions.
+- Enhanced Security: Hooks can be used to implement additional security checks, ensuring transactions meet certain criteria before proceeding (for example to mitigate Oracle price manipulation) 
+- Interoperability: By integrating with other protocols or external data sources, hooks can help create more interconnected and functional DeFi ecosystems outside the single chain. 
+
+For XTF’s ETF funds, hooks are equally important. Here is how they can be used:
+
+[statemachine](/state-machine.png)
+
+1.	_START_CONTRIBUTION and _START_CONTRIBUTION_EXTERNAL_CHAIN:
+	- Hook: Pre-contribution hook.
+	- Usage: Validate and initialize contributions from primary and external chains, ensuring that all necessary prerequisites are met before the state transition.
+2.	_REACH_FULL_PRIMARY_CHAINS and _REACH_FULL_SIDECHAINS:
+	- Hook: Contribution completion hook.
+	- Usage: Trigger actions when contributions reach the required thresholds. This can include logging, notifications, or executing specific business logic like asset rebalancing.
+3. _DISTRIBUTE_ETFTOKENS_TO_CONTRIBUTORS and _MINT_NFT_VOTE/GOVERNANCE TOKEN:
+	- Hook: Token distribution hook.
+	- Usage: Ensure accurate distribution of ETF tokens and minting of governance tokens. Additionally checks or state updates can be performed here to ensure integrity and compliance.
+4.	_LOCK_PERIOD:
+	- Hook: Lock period initiation hook.
+	- Usage: Apply custom logic at the start of the lock period, such as setting up timers, logging, or initializing state variables relevant to the lock period.
+5. _ENABLE_REDEMPTION:
+	- Hook: Redemption enablement hook.
+	- Usage: Perform checks and update states to allow redemption, ensuring that all conditions are met before users can redeem their tokens.
+6.	_BURN_ETF_VOTES and _BURN_NFT_VOTE:
+	- Hook: Pre-redeeming hook.
+	- Possible Usage: Validate the burn actions, ensuring that the votes or tokens being burned are legitimate and that the redemption process is securely initiated.
+
+# INDEX AGGREGATOR
+
+The Index Aggregator for XTF is designed to address the lack of oracles that provide reliable top N token lists by specific metrics, e.g. market cap. This  approach leverages price oracles to store historical price data, connects smart contracts to monitor token supplies, and integrates with decentralized exchanges (DEXs) like Uniswap to evaluate liquidity. Additionally, it connects with other smart contracts to assess the usage of tokens in various protocols, providing a comprehensive and distributed method for creating accurate and reliable indexes.
+XTF can later use indexes and weights to define funds allocation for each vault.
+
+The aggregator’s functionality includes:
+
+1. **Market Cap Calculation**: By using price oracles and monitoring token supplies, the Index Aggregator can calculate the market cap of various tokens over time. This ensures that the top N tokens are determined based on real-time and historical data aggregated.
+2. **Liquidity Evaluation**: Connecting with DEXs allows the aggregator to evaluate the liquidity of tokens, ensuring that only those with sufficient liquidity are included in the indexes. This is crucial for maintaining the integrity and reliability of the ETF funds.
+3. Protocol Integration: The aggregator can connect with other smart contracts to monitor staked or utilized tokens in different protocols, providing a more holistic view of the token’s market presence and utility. For example, looking if a token is staked or used in a certain way by certain protocols.
+4. **Tagging System**: Facilitating the creation of category-specific indexes, the aggregator includes a tagging system. This allows for the creation of indexes based on specific categories, such as DeFi, AI tokens, meme coins, etc., enabling more tailored and diversified investment options. This might be implemented using a voting system or TLS oracles*
+5. **Weighting System**: The aggregator offers customizable weighting systems to allocate the required amount for each token and its percentage within an ETF small vault. This flexibility allows for the creation of balanced and strategically weighted ETF funds.
+
+The aggregator's goal is to enable the creation of passive ETF funds using these indexes and weighting systems, eliminating the need for third-party trusted providers to generate lists and indexes. Competitors had to create partnerships with trusted entities like Bankless, Defi-Pulse. By doing so, XTF ensures a decentralized, transparent, and trustless approach to index and ETF fund creation, empowering investors with a more secure and autonomous investment solution. This method not only enhances the reliability of the indexes but also provides greater flexibility and control to the investors, aligning with the core principles of decentralization and transparency in the crypto space.
 
 # INTERFACE
 
