@@ -31,7 +31,7 @@ const TokenBalanceAllowance: React.FC<TokenBalanceAllowanceProps> = ({ name, tok
   });
 
   const {
-    data: approve,
+    // data: approve,
     isLoading: approveLoading,
     writeAsync: approveAsync,
   } = useContractWrite({

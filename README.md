@@ -173,19 +173,32 @@ contract ETFIssuingChain  {
 				._quantity * answer;
 
 ...
-\\ Or using ChainLink  
+```
+
+Another possibility would be to partner with [Redstone](https://redstone.finance/) and get price data by injecting data in the call using their SDK
+
+```java
+			if (isMainChain()) {
+				if (accountContributionsPerVault[_vaultId][_tokens[i]._contributor] == 0) {
+					contributorsByVault[_vaultId].push(_tokens[i]._contributor);
+				}
 
 
+				// REDSTONE INTERFACE
+				bytes32[] memory dataFeedIds = new bytes32[](6);
+				dataFeedIds[0] = bytes32("ASSET_ID");
+				uint256[] memory prices = getOracleNumericValuesFromTxMsg(dataFeedIds);
 
+				accountContributionsPerVault[_vaultId][_tokens[i]._contributor] += _tokens[i]
+					._quantity * price;
+			}
 ```
 
 Please note that for this demo the ChainLink oracle is always returning a fixed value decided during deployment.
 
 [MockAggregator.sol](/packages/hardhat/contracts/MockAggregator.sol)
 
-
 # TECH STACH
-
 
 For this demo, I utilizsd Scaffold-Eth to quickly set up a Hardhat project connected to a Next.js React application. This is used with Viem and Wagmi, allowing automatic interaction with the contracts. Additional frontend libraries and resources were employed to improve the user interface, including the Ant Design (antd) React framework, Neobrutalism CSS theme, ApexCharts for vault selection, and React Chart.js for the pie chart.
 Since assets are securely and transparently stored across different blockchains, we are using QuickNode to access a dedicated Sepolia node. A dedicated node for XRP evm Ledger was not necessary during development as the provided RPC URL was sufficient to handle all the traffic.

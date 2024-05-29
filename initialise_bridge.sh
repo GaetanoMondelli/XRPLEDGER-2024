@@ -1,6 +1,4 @@
-
 #!/bin/bash
-
 source .env
 
 cd bridge

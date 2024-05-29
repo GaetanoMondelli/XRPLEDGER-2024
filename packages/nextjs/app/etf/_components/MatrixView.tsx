@@ -10,9 +10,7 @@ function getColor(state: number, selected: boolean, bundleId: number) {
 
   if (state === 0) {
     // return dark gray if selected or gray if not
-    if (["42", "27", "12", "65", "7", "18", "71"].includes(bundleId.toString())) {
-      return selected ? "#FFA500" : "#FFD700";
-    }
+
     return selected ? "#696969" : "#D3D3D3";
   }
   if (state === 1) {

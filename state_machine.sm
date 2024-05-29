@@ -1,0 +1,27 @@
+initial,
+contributing,
+full,
+locked,
+awaitingRedemption,
+redeemable,
+redeeming,
+burned;
+
+initial -> collectPrice: fetchPrices;
+collectPrice -> enoughPrices: validate timewindow & data points;
+priceAggregator -> collectPrice: averageDataPoint;
+enoughPrices -> defineIndexes: persist_index;
+defineIndexes -> createETF: define_weight;
+createETF -> contributing : _START_CONTRIBUTION;
+createETF -> receiveMessages : _START_CONTRIBUTION_EXTERNAL_CHAIN;
+
+contributing -> full : _REACH_FULL_PRIMARY_CHAINS;
+receiveMessages -> full: _REACH_FULL_SIDECHAINS;
+full -> locked : _DISTRIBUTE ETFTOKENS TO CONTRIBUTOIRS;
+full -> locked : _MINT_NFT_VOTE/GOVERNANCE TOKEN;
+locked -> redeemable : _LOCK_PERIOD;
+awaitingRedemption -> redeeming : _ENABLE_REDEMPTION;
+redeemable -> redeeming : _BURN_ETF_VAULE;
+redeeming -> burned : _SENT REEDEM EXTERNAL MESSAGES ;
+redeeming -> burned : _COMPLETE_REDEMPTION TO BURNER;
+

@@ -224,6 +224,7 @@ contract ETFLockingChain {
 			bytes32ToAddress(_sender) == sideChainLock,
 			"Sender is not the sideChainLock"
 		);
+		
 
 		DepositInfo memory _depositInfo = abi.decode(_message, (DepositInfo));
 		uint32 _chainId = _depositInfo.tokens[0]._chainId;

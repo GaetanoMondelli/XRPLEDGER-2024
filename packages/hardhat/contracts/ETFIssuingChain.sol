@@ -5,8 +5,11 @@ pragma solidity ^0.8.0;
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISimpleERC20 } from "./SimpleERC20.sol";
+import "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
+import { IInterchainSecurityModule } from "@hyperlane-xyz/core/contracts/interfaces/IInterchainSecurityModule.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "hardhat/console.sol";
+import "@redstone-finance/evm-connector/contracts/data-services/RapidDemoConsumerBase.sol";
 
 struct TokenQuantity {
 	address _address;
@@ -40,11 +43,22 @@ struct DepositInfo {
 	TokenQuantity[] tokens;
 }
 
-contract ETFIssuingChain {
+contract ETFLock is RapidDemoConsumerBase {
 	address public sideChainLock;
+	uint32 public sideChainId;
 	TokenQuantity[] public requiredTokens;
 	mapping(address => TokenQuantity) public addressToToken;
 	uint32 public chainId;
+	uint32 public mainChainId;
+
+	uint32[] public receivedMessages;
+
+	// Siechain params
+	address public mainChainLock;
+	IMailbox outbox;
+	IInterchainSecurityModule securityModule;
+
+	// Mainchain params
 	address public etfToken;
 	uint256 public etfTokenPerVault;
 
@@ -63,11 +77,13 @@ contract ETFIssuingChain {
 	mapping(uint256 => Vault) public vaults;
 
 	constructor(
+		uint32 _mainChain,
 		uint32 _chainId,
 		TokenQuantity[] memory _requiredTokens,
 		address _etfToken,
 		uint256 _etfTokenPerVault
 	) {
+		mainChainId = _mainChain;
 		chainId = _chainId;
 		etfToken = _etfToken;
 		etfTokenPerVault = _etfTokenPerVault;
@@ -75,6 +91,36 @@ contract ETFIssuingChain {
 			requiredTokens.push(_requiredTokens[i]);
 			addressToToken[_requiredTokens[i]._address] = _requiredTokens[i];
 		}
+	}
+
+	function setSideChainParams(
+		address _mainChainLock,
+		address _outbox,
+		address _securityModule
+	) public {
+		require(
+			!isMainChain(),
+			"Main chain lock address cannot be set on main chain"
+		);
+		mainChainLock = _mainChainLock;
+		outbox = IMailbox(_outbox);
+		securityModule = IInterchainSecurityModule(_securityModule);
+	}
+
+	function setMainChainParams(
+		address _sideChainLock,
+		uint32 _sideChainId,
+		address _outbox,
+		address _securityModule
+	) public {
+		require(
+			isMainChain(),
+			"Side Chain lock address can only be set mainchain"
+		);
+		outbox = IMailbox(_outbox);
+		sideChainId = _sideChainId;
+		securityModule = IInterchainSecurityModule(_securityModule);
+		sideChainLock = _sideChainLock;
 	}
 
 	function getVaultStates() public view returns (VaultState[] memory) {
@@ -97,6 +143,21 @@ contract ETFIssuingChain {
 		vaults[_vaultId].state = _state;
 	}
 
+	function isMainChain() public view returns (bool) {
+		return chainId == mainChainId;
+	}
+
+
+	function getIndexForDepositInfo(TokenQuantity memory _tokenQuantity) public view returns (uint256) {
+		// return the index of the token in the requiredTokens array
+		for (uint256 i = 0; i < requiredTokens.length; i++) {
+			if (requiredTokens[i]._address == _tokenQuantity._address) {
+				return i;
+			}
+		}
+		return 0;
+	}
+
 	function _deposit(
 		DepositInfo memory _depositInfo,
 		uint32 _chainId
@@ -109,7 +170,7 @@ contract ETFIssuingChain {
 			"Vault is not open or empty"
 		);
 
-		// require(_chainId == chainId, "ChainId does not match the contract chainId")
+		require(_chainId == chainId, "ChainId does not match the contract chainId");
 
 		if (vaults[_vaultId].state == VaultState.EMPTY) {
 			for (uint256 i = 0; i < requiredTokens.length; i++) {
@@ -127,23 +188,20 @@ contract ETFIssuingChain {
 		}
 
 		for (uint256 i = 0; i < _tokens.length; i++) {
-			// if (_tokens[i]._chainId != _chainId) {
-			// 	revert(
-			// 		"Token chainId does not match the chainId of the contract"
-			// 	);
-			// }
-			console.log(
-				"Token address: %s",
-				_tokens[i]._address,
-				i,
-				vaults[_vaultId]._tokens.length
-			);
+			if (_tokens[i]._chainId != _chainId) {
+				revert(
+					"Token chainId does not match the chainId of the contract"
+				);
+			}
 			if (
 				_tokens[i]._quantity + vaults[_vaultId]._tokens[i]._quantity >
 				addressToToken[_tokens[i]._address]._quantity
 			) {
 				revert("Token quantity exceeds the required amount");
 			}
+
+
+			uint256 index = getIndexForDepositInfo(_tokens[i]);
 
 			if (_tokens[i]._chainId == _chainId) {
 				IERC20(_tokens[i]._address).transferFrom(
@@ -153,7 +211,8 @@ contract ETFIssuingChain {
 				);
 			}
 
-			vaults[_vaultId]._tokens[i]._quantity += _tokens[i]._quantity;
+			
+			vaults[_vaultId]._tokens[index]._quantity += _tokens[i]._quantity;
 
 			emit Deposit(
 				_vaultId,
@@ -163,18 +222,28 @@ contract ETFIssuingChain {
 				_tokens[i]._contributor
 			);
 
-			if (accountContributionsPerVault[_vaultId][msg.sender] == 0) {
-				contributorsByVault[_vaultId].push(msg.sender);
+			if (isMainChain()) {
+				if (accountContributionsPerVault[_vaultId][_tokens[i]._contributor] == 0) {
+					contributorsByVault[_vaultId].push(_tokens[i]._contributor);
+				}
+
+				bytes32[] memory dataFeedIds = new bytes32[](6);
+				dataFeedIds[0] = bytes32("BNB");
+				uint256[] memory prices = getOracleNumericValuesFromTxMsg(dataFeedIds);
+
+				uint256 price = prices[0];
+
+
+				//  CHAINLINK INTERFACE
+				// uint256 price = AggregatorV3Interface(_tokens[i]._aggretator).latestRoundData().answer;
+
+				// (, /* uint80 roundID */ int answer, , , ) = AggregatorV3Interface(
+				// 	_tokens[i]._aggregator
+				// ).latestRoundData();
+
+				accountContributionsPerVault[_vaultId][_tokens[i]._contributor] += _tokens[i]
+					._quantity * price;
 			}
-
-			// uint256 price = AggregatorV3Interface(_tokens[i]._aggretator).latestRoundData().answer;
-
-			// (, /* uint80 roundID */ int answer, , , ) = AggregatorV3Interface(
-			// 	_tokens[i]._aggregator
-			// ).latestRoundData();
-
-			accountContributionsPerVault[_vaultId][msg.sender] += _tokens[i]
-				._quantity;
 		}
 
 		for (uint256 i = 0; i < requiredTokens.length; i++) {
@@ -186,7 +255,28 @@ contract ETFIssuingChain {
 			}
 		}
 		vaults[_vaultId].state = VaultState.MINTED;
-		distributeShares(_vaultId);
+
+		if (isMainChain()) {
+			distributeShares(_vaultId);
+		} else {
+			notifyDepositToMainChain(_depositInfo);
+		}
+	}
+
+	function notifyDepositToMainChain(
+		DepositInfo memory _depositInfo
+	) internal {
+		bytes32 mainChainLockBytes32 = addressToBytes32(mainChainLock);
+		uint256 fee = outbox.quoteDispatch(
+			mainChainId,
+			mainChainLockBytes32,
+			abi.encode(_depositInfo)
+		);
+		outbox.dispatch{ value: fee }(
+			mainChainId,
+			mainChainLockBytes32,
+			abi.encode(_depositInfo)
+		);
 	}
 
 	function distributeShares(uint256 _vaultId) internal {
@@ -208,7 +298,7 @@ contract ETFIssuingChain {
 		}
 	}
 
-	function deposit(DepositInfo memory _depositInfo) public {
+	function deposit(DepositInfo memory _depositInfo) public payable {
 		_deposit(_depositInfo, chainId);
 	}
 
@@ -216,15 +306,29 @@ contract ETFIssuingChain {
 		uint32 _origin,
 		bytes32 _sender,
 		bytes calldata _message
+		onlyBridge
 	) external payable {
 		require(
-			bytes32ToAddress(_sender) == sideChainLock,
-			"Sender is not the sideChainLock"
+			isMainChain() && bytes32ToAddress(_sender) == sideChainLock,
+			"Sender to mainChain is not the sideChainLock"
 		);
 
-		DepositInfo memory _depositInfo = abi.decode(_message, (DepositInfo));
-		uint32 _chainId = _depositInfo.tokens[0]._chainId;
-		_deposit(_depositInfo, _chainId);
+		require(
+			!isMainChain() && bytes32ToAddress(_sender) == mainChainLock,
+			"Sender to sideChain is not the mainChainLock"
+		);
+
+
+		if(isMainChain()) {
+			DepositInfo memory _depositInfo = abi.decode(_message, (DepositInfo));
+			// uint32 _chainId = _depositInfo.tokens[0]._chainId;
+			_deposit(_depositInfo, chainId);
+			return;
+		}
+		else {
+			uint256 _vaultId = abi.decode(_message, (uint256));
+			burn(_vaultId);
+		}
 	}
 
 	function burn(uint256 _vaultId) public {
@@ -233,6 +337,7 @@ contract ETFIssuingChain {
 			"Vault is not minted"
 		);
 		// require to pay back the etfToken
+		require(isMainChain(), "Only main chain can burn");
 		ISimpleERC20(etfToken).burn(msg.sender, etfTokenPerVault);
 		for (uint256 j = 0; j < vaults[_vaultId]._tokens.length; j++) {
 			if (vaults[_vaultId]._tokens[j]._chainId == chainId) {
@@ -243,6 +348,19 @@ contract ETFIssuingChain {
 			}
 		}
 		vaults[_vaultId].state = VaultState.BURNED;
+
+		// notify burn to sidechain
+		bytes32 sideChainLockBytes32 = addressToBytes32(sideChainLock);
+		uint256 fee = outbox.quoteDispatch(
+			sideChainId,
+			sideChainLockBytes32,
+			abi.encode(_vaultId)
+		);
+		outbox.dispatch{ value: fee }(
+			sideChainId,
+			sideChainLockBytes32,
+			abi.encode(_vaultId)
+		);
 	}
 
 	function addressToBytes32(address _addr) internal pure returns (bytes32) {
