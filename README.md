@@ -25,7 +25,7 @@ Terms used in this context from https://opensource.ripple.com/
 
 ![hack](/hack.png)
 
-### Hackhaton Submission Form 
+### INTRODUCTION
 
 XTF, or Decentralized Exchange-Traded Fund, reinterprets traditional ETFs for the cryptocurrency market by offering a DeFi solution that simplifies access to a diversified, multichain asset portfolio. 
 
@@ -198,7 +198,7 @@ Please note that for this demo the ChainLink oracle is always returning a fixed 
 
 [MockAggregator.sol](/packages/hardhat/contracts/MockAggregator.sol)
 
-# TECH STACH
+# TECH STACK
 
 For this demo, I utilizsd Scaffold-Eth to quickly set up a Hardhat project connected to a Next.js React application. This is used with Viem and Wagmi, allowing automatic interaction with the contracts. Additional frontend libraries and resources were employed to improve the user interface, including the Ant Design (antd) React framework, Neobrutalism CSS theme, ApexCharts for vault selection, and React Chart.js for the pie chart.
 Since assets are securely and transparently stored across different blockchains, we are using QuickNode to access a dedicated Sepolia node. A dedicated node for XRP evm Ledger was not necessary during development as the provided RPC URL was sufficient to handle all the traffic.
